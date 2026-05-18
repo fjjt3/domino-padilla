@@ -13,6 +13,7 @@ Welcome to the Tatooine Cantina! This project is a multi-player Domino game buil
 Ensure you are using Java 21.
 ```bash
 # From the project root
+cd backend
 ./mvnw spring-boot:run
 ```
 The server will start at `http://localhost:8080`. You can verify Swagger at `http://localhost:8080/swagger-ui/index.html`.

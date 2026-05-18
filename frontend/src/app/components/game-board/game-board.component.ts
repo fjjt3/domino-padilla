@@ -130,10 +130,14 @@ export class GameBoardComponent implements OnInit {
     }
     
     console.log('Attempting move:', tile);
-    console.log('Board ends:', 
-      this.gameState.board[0].left, 
-      this.gameState.board[this.gameState.board.length - 1].right
-    );
+    if (this.gameState.board && this.gameState.board.length > 0) {
+      console.log('Board ends:', 
+        this.gameState.board[0].left, 
+        this.gameState.board[this.gameState.board.length - 1].right
+      );
+    } else {
+      console.log('Board is empty, first move!');
+    }
 
     this.dominoService.sendMove(this.gameId, this.playerId, tile);
   }

@@ -23,7 +23,7 @@ public class DominoGameEngine {
         Collections.shuffle(deck);
         
         Map<String, List<DominoTile>> hands = new HashMap<>();
-        int tilesPerPlayer = deck.size() / players.size();
+        int tilesPerPlayer = 7; // standard rules: always 7 per player 
         
         for (int i = 0; i < players.size(); i++) {
             int start = i * tilesPerPlayer;

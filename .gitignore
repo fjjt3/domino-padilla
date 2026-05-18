@@ -1,6 +1,6 @@
 # Java/Maven
 target/
-!.mvn/wrapper/maven-wrapper.jar
+!backend/.mvn/wrapper/maven-wrapper.jar
 !**/src/main/resources/archetype-resources/**
 !**/src/test/resources/archetype-resources/**
 
