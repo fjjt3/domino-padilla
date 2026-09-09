@@ -37,7 +37,10 @@ import { TileComponent } from '../tile/tile.component';
       </div>
 
       <div class="player-area glass-panel">
-        <h3>Your Hand ({{ playerId }})</h3>
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
+          <h3>Your Hand ({{ playerId }})</h3>
+          <button *ngIf="gameState?.currentPlayer === playerId" (click)="passTurn()" class="pass-btn">Pass Turn</button>
+        </div>
         <div class="hand">
           <app-tile *ngFor="let tile of myHand" 
                     [left]="tile.left" 
@@ -70,6 +73,8 @@ import { TileComponent } from '../tile/tile.component';
       text-transform: uppercase;
       box-shadow: 0 0 10px var(--neon-blue);
     }
+    .pass-btn { background: #ff4444; color: white; padding: 8px 16px; border-radius: 4px; border: none; cursor: pointer; font-weight: bold; text-transform: uppercase; }
+    .pass-btn:hover { background: #cc0000; box-shadow: 0 0 10px #ff4444; }
     .tiles-row { display: flex; align-items: center; gap: 5px; }
     .player-area { padding: 20px; }
     .hand { display: flex; gap: 15px; justify-content: center; }
@@ -130,16 +135,31 @@ export class GameBoardComponent implements OnInit {
     }
     
     console.log('Attempting move:', tile);
+    let side: string | undefined = undefined;
+
     if (this.gameState.board && this.gameState.board.length > 0) {
-      console.log('Board ends:', 
-        this.gameState.board[0].left, 
-        this.gameState.board[this.gameState.board.length - 1].right
-      );
+      const leftEnd = this.gameState.board[0].left;
+      const rightEnd = this.gameState.board[this.gameState.board.length - 1].right;
+      
+      console.log('Board ends:', leftEnd, rightEnd);
+      
+      const canLeft = tile.left === leftEnd || tile.right === leftEnd;
+      const canRight = tile.left === rightEnd || tile.right === rightEnd;
+
+      if (canLeft && canRight && leftEnd !== rightEnd) {
+        const wantLeft = window.confirm("¡Tu ficha encaja en AMBOS lados!\n\n[ACEPTAR] = Colocar a la Izquierda\n[CANCELAR] = Colocar a la Derecha");
+        side = wantLeft ? "left" : "right";
+      }
     } else {
       console.log('Board is empty, first move!');
     }
 
-    this.dominoService.sendMove(this.gameId, this.playerId, tile);
+    this.dominoService.sendMove(this.gameId, this.playerId, tile, side);
+  }
+
+  passTurn() {
+    console.log('Passing turn');
+    this.dominoService.sendPass(this.gameId, this.playerId);
   }
 
   resetGame() {

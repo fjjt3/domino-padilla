@@ -16,9 +16,6 @@ export class DominoService {
     this.client = new Client({
       webSocketFactory: () => new SockJS('http://localhost:8080/domino-websocket'),
       reconnectDelay: 5000,
-      onConnect: () => {
-        console.log('Connected to WebSocket');
-      },
       onStompError: (frame) => {
         console.error('STOMP error', frame);
       }
@@ -27,12 +24,27 @@ export class DominoService {
     this.client.activate();
   }
 
-  subscribeToGame(gameId: String): Observable<any> {
-    this.client.onConnect = (frame) => {
+  subscribeToGame(gameId: string): Observable<any> {
+    const doSubscribe = () => {
+      console.log('Subscribing to game topic:', gameId);
       this.client.subscribe(`/topic/game/${gameId}`, (message: Message) => {
-        this.stateSubject.next(JSON.parse(message.body));
+        const state = JSON.parse(message.body);
+        console.log('Received game state update, currentPlayer:', state.currentPlayer);
+        this.stateSubject.next(state);
       });
     };
+
+    if (this.client.connected) {
+      // Already connected, subscribe immediately
+      doSubscribe();
+    } else {
+      // Wait for connection
+      this.client.onConnect = () => {
+        console.log('Connected to WebSocket');
+        doSubscribe();
+      };
+    }
+
     return this.stateSubject.asObservable();
   }
 
@@ -40,10 +52,19 @@ export class DominoService {
     return this.http.post(`${this.apiUrl}/start/${gameId}`, players);
   }
 
-  sendMove(gameId: string, playerId: string, tile: any): void {
+  sendMove(gameId: string, playerId: string, tile: any, side?: string): void {
+    console.log('Sending move:', { playerId, tile, side });
     this.client.publish({
       destination: `/app/game/${gameId}/move`,
-      body: JSON.stringify({ playerId, tile })
+      body: JSON.stringify({ playerId, tile, side })
+    });
+  }
+
+  sendPass(gameId: string, playerId: string): void {
+    this.client.publish({
+      destination: `/app/game/${gameId}/pass`,
+      body: JSON.stringify({ playerId })
     });
   }
 }
+

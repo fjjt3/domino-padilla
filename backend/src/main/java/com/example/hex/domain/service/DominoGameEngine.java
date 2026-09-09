@@ -55,7 +55,7 @@ public class DominoGameEngine {
                tile.left() == last.right() || tile.right() == last.right();
     }
 
-    public List<DominoTile> executeMove(List<DominoTile> board, DominoTile tile) {
+    public List<DominoTile> executeMove(List<DominoTile> board, DominoTile tile, String side) {
         List<DominoTile> newBoard = new ArrayList<>(board);
         if (newBoard.isEmpty()) {
             newBoard.add(tile);
@@ -63,14 +63,26 @@ public class DominoGameEngine {
             DominoTile first = newBoard.get(0);
             DominoTile last = newBoard.get(newBoard.size() - 1);
             
-            if (tile.right() == first.left()) {
-                newBoard.add(0, tile);
-            } else if (tile.left() == first.left()) {
-                newBoard.add(0, new DominoTile(tile.right(), tile.left()));
-            } else if (tile.left() == last.right()) {
-                newBoard.add(tile);
-            } else if (tile.right() == last.right()) {
-                newBoard.add(new DominoTile(tile.right(), tile.left()));
+            boolean canLeft = (tile.right() == first.left() || tile.left() == first.left());
+            boolean canRight = (tile.left() == last.right() || tile.right() == last.right());
+
+            if ("left".equals(side) && canLeft) {
+                if (tile.right() == first.left()) newBoard.add(0, tile);
+                else newBoard.add(0, new DominoTile(tile.right(), tile.left()));
+            } else if ("right".equals(side) && canRight) {
+                if (tile.left() == last.right()) newBoard.add(tile);
+                else newBoard.add(new DominoTile(tile.right(), tile.left()));
+            } else {
+                // Auto-place fallback
+                if (tile.right() == first.left()) {
+                    newBoard.add(0, tile);
+                } else if (tile.left() == first.left()) {
+                    newBoard.add(0, new DominoTile(tile.right(), tile.left()));
+                } else if (tile.left() == last.right()) {
+                    newBoard.add(tile);
+                } else if (tile.right() == last.right()) {
+                    newBoard.add(new DominoTile(tile.right(), tile.left()));
+                }
             }
         }
         return newBoard;

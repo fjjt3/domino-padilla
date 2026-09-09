@@ -40,8 +40,8 @@ public class DominoGameService {
         return initialState;
     }
 
-    public GameState playMove(String gameId, String playerId, DominoTile tile) {
-        log.info("Processing move for game {}: player {} tile {}", gameId, playerId, tile);
+    public GameState playMove(String gameId, String playerId, DominoTile tile, String side) {
+        log.info("Processing move for game {}: player {} tile {} side {}", gameId, playerId, tile, side);
         GameState currentState = gameRepository.findById(gameId).orElse(null);
         if (currentState == null) {
             log.warn("Game {} not found", gameId);
@@ -67,8 +67,8 @@ public class DominoGameService {
             return currentState;
         }
 
-        log.info("Executing move for tile {}", tile);
-        List<DominoTile> newBoard = engine.executeMove(currentState.board(), tile);
+        log.info("Executing move for tile {} on side {}", tile, side);
+        List<DominoTile> newBoard = engine.executeMove(currentState.board(), tile, side);
         List<DominoTile> newHand = new ArrayList<>(playerHand);
         newHand.remove(tile);
 
@@ -124,7 +124,7 @@ public class DominoGameService {
                 .findFirst();
 
         if (validTile.isPresent()) {
-            playMove(gameId, "Machine", validTile.get());
+            playMove(gameId, "Machine", validTile.get(), null);
         } else {
             // Machine has to pass, skip to next player (Human)
             GameState passedState = new GameState(
@@ -143,6 +143,35 @@ public class DominoGameService {
 
     private void publishState(String gameId, String type, GameState state) {
         eventPublisher.publishEvent(new DominoGameEvent(gameId, type, state));
+    }
+    
+    public GameState passTurn(String gameId, String playerId) {
+        log.info("Player {} passing turn for game {}", playerId, gameId);
+        GameState currentState = gameRepository.findById(gameId).orElse(null);
+        if (currentState == null || currentState.isGameOver() || !currentState.currentPlayer().equals(playerId)) {
+            return currentState;
+        }
+
+        int currentIndex = currentState.playerOrder().indexOf(playerId);
+        String nextPlayer = currentState.playerOrder().get((currentIndex + 1) % currentState.playerOrder().size());
+
+        GameState newState = new GameState(
+            gameId,
+            currentState.board(),
+            currentState.playerHands(),
+            nextPlayer,
+            false,
+            null,
+            currentState.playerOrder()
+        );
+
+        gameRepository.save(newState);
+        publishState(gameId, "PLAYER_PASSED", newState);
+
+        if (nextPlayer.equals("Machine")) {
+            triggerAiMove(gameId);
+        }
+        return newState;
     }
     
     public GameState getGameState(String gameId) {
